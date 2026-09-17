@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // StakSuite Firestore Rules — company owner UID (Spark)
+    //
+    // Authorization:
+    //   request.auth.uid
+    //     → stak_companies/{companyId}.uid
+    //     → ALLOW / DENY
+    //
+    // No broad recursive match under stak_companies/{companyId}.
+    // Nested app data is limited to explicit stockstak / sweetstak paths.
+    // Legacy members paths are explicitly denied.
+    // ============================================================
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function authUid() {
+      return request.auth.uid;
+    }
+
+    function companyOwnerUid(companyId) {
+      return get(/databases/$(database)/documents/stak_companies/$(companyId)).data.uid;
+    }
+
+    function isCompanyOwner(companyId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/stak_companies/$(companyId))
+        && companyOwnerUid(companyId) == authUid();
+    }
+
+    // ---- Company document (owner record) ----
+    match /stak_companies/{companyId} {
+      allow read: if signedIn()
+                  && resource.data.uid == authUid();
+
+      allow create: if signedIn()
+                    && request.resource.data.uid == authUid();
+
+      allow update: if signedIn()
+                    && resource.data.uid == authUid()
+                    && request.resource.data.uid == authUid();
+
+      allow delete: if signedIn()
+                    && resource.data.uid == authUid();
+    }
+
+    // ---- Explicit nested app data (NOT a broad companyId/{document=**}) ----
+    // StockStak app documents under the company
+    match /stak_companies/{companyId}/stockstak/{docId} {
+      allow read, create, update, delete: if isCompanyOwner(companyId);
+    }
+
+    // SweetStak app documents under the company
+    match /stak_companies/{companyId}/sweetstak/{docId} {
+      allow read, create, update, delete: if isCompanyOwner(companyId);
+    }
+
+    // ---- Legacy members paths: explicitly denied ----
+    match /stak_companies/{companyId}/members/{memberUid} {
+      allow read, write: if false;
+    }
+
+    match /stak_companies/{companyId}/members/{memberUid}/{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---- stak_meta: company-scoped via owner UID ----
+    function isUsersStockstakMeta(docId) {
+      return docId.matches('users_stockstak_.+');
+    }
+    function isUsersSweetstakMeta(docId) {
+      return docId.matches('users_sweetstak_.+');
+    }
+    function companyFromUsersStockstak(docId) {
+      return docId.split('users_stockstak_')[1];
+    }
+    function companyFromUsersSweetstak(docId) {
+      return docId.split('users_sweetstak_')[1];
+    }
+    function canAccessUsersStockstakMeta(docId) {
+      return isUsersStockstakMeta(docId)
+        && isCompanyOwner(companyFromUsersStockstak(docId));
+    }
+    function canAccessUsersSweetstakMeta(docId) {
+      return isUsersSweetstakMeta(docId)
+        && isCompanyOwner(companyFromUsersSweetstak(docId));
+    }
+    function portalsCompanyId(docId) {
+      return docId.split('portals_')[1];
+    }
+
+    match /stak_meta/{docId} {
+      allow read: if canAccessUsersStockstakMeta(docId)
+        || canAccessUsersSweetstakMeta(docId)
+        || (
+          signedIn()
+          && docId.matches('portals_.+')
+          && isCompanyOwner(portalsCompanyId(docId))
+        );
+      allow create, update: if canAccessUsersStockstakMeta(docId)
+        || canAccessUsersSweetstakMeta(docId);
+      allow delete: if false;
+    }
+
+    match /stak_audit_admin/{docId} {
+      allow read, write: if false;
+    }
+
+    match /stak_memberships/{docId} {
+      allow read, write: if false;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
