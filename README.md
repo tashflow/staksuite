@@ -1,20 +1,42 @@
 # StakSuite
 
-Restaurant operations app (StockStak + SweetStak).
+Single-file web suite: **StockStak** (inventory & POS) + **SweetStak**.
 
-## Firebase project
-`stak-suite-e537d`
+## Quick start
 
-## Setup
-1. Open `index.html` in a browser (prefer local server or hosted HTTPS).
-2. Firebase Console → Authentication → enable Email/Password.
-3. Create Firestore database if needed.
-4. Deploy rules: `firebase deploy --only firestore:rules`
-5. Create company portal, then open portal.
+1. Download or clone this repo.
+2. Open `index.html` in a modern browser  
+   **or** serve locally (recommended for Firebase / printer bridge):
 
-## Auth model
-Firebase Auth UID ↔ `stak_companies/{companyId}.uid`
+```bash
+# Python
+python3 -m http.server 8080
+
+# Node
+npx serve .
+```
+
+3. Visit `http://localhost:8080`
+
+## Main file
+
+| File | Description |
+|------|-------------|
+| `index.html` | Full StakSuite app (landing + modules) |
+
+## Optional
+
+| Folder | Description |
+|--------|-------------|
+| `escpos-bridge/` | Local network thermal printer bridge |
+| `thermal-printer-setup/` | Printer driver notes & test scripts |
 
 ## Notes
-- No Cloud Functions required.
-- `STAK_DEMO_MODE` is `false` in this build.
+
+- Theme (dark/light) is saved in `localStorage`.
+- Company portal data uses Firebase when configured.
+- For thermal IP printing, run `escpos-bridge` and set the printer IP in StockStak → Printer settings.
+
+## License
+
+Private / as provided by the project owner.
