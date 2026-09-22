@@ -1,0 +1,12 @@
+{
+  "name": "staksuite-escpos-bridge",
+  "version": "1.0.0",
+  "description": "Local ESC/POS bridge for StakSuite StockStak thermal receipts",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

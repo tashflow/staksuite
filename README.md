@@ -1,42 +1,51 @@
-# StakSuite
+# StakSuite ESC/POS bridge
 
-Single-file web suite: **StockStak** (inventory & POS) + **SweetStak**.
+Local HTTP bridge: **StockStak → this server → thermal printer** (network port 9100).
 
-## Quick start
-
-1. Download or clone this repo.
-2. Open `index.html` in a modern browser  
-   **or** serve locally (recommended for Firebase / printer bridge):
+## Run
 
 ```bash
-# Python
-python3 -m http.server 8080
-
-# Node
-npx serve .
+cd escpos-bridge
+npm start
 ```
 
-3. Visit `http://localhost:8080`
+With a network printer IP:
 
-## Main file
+```bash
+PRINTER_HOST=192.168.1.50 PRINTER_PORT=9100 npm start
+```
 
-| File | Description |
-|------|-------------|
-| `index.html` | Full StakSuite app (landing + modules) |
+Optional:
 
-## Optional
+```bash
+PORT=3333
+BRIDGE_API_KEY=my-secret
+SAVE_LAST=1
+```
 
-| Folder | Description |
-|--------|-------------|
-| `escpos-bridge/` | Local network thermal printer bridge |
-| `thermal-printer-setup/` | Printer driver notes & test scripts |
+## StockStak settings
 
-## Notes
+**POS → Printer settings → Receipt printer API**
 
-- Theme (dark/light) is saved in `localStorage`.
-- Company portal data uses Firebase when configured.
-- For thermal IP printing, run `escpos-bridge` and set the printer IP in StockStak → Printer settings.
+| Field | Value |
+|--------|--------|
+| Print method | **Raw ESC/POS API** |
+| API / Bridge URL | `http://127.0.0.1:3333/print` |
+| API key | same as `BRIDGE_API_KEY` if set |
 
-## License
+Then click **Test printer API** or complete a checkout.
 
-Private / as provided by the project owner.
+## Request body
+
+```json
+{
+  "type": "escpos",
+  "format": "base64",
+  "data": "<base64 bytes>",
+  "width": 80
+}
+```
+
+## USB-only printers
+
+This bridge targets **network raw 9100**. For pure USB, share the printer on LAN, use PrintNode, or a vendor ePOS tool.
