@@ -1326,72 +1326,7 @@ img{max-width:100%;height:auto;}
             try { frame.removeAttribute('data-loaded'); } catch (e) {}
             frame.srcdoc = '<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#0B1624;color:#F0F6FC">' +
               '<h2>Could not load module</h2><p>The app file is still loading or was truncated. Hard-refresh (Ctrl+Shift+R), or re-download index.html.</p>' +
-              '<button onclick="parent.location.reload()" style="padding:10px 16px;border:0;border-radius:10px;background:#2EC4D6;font-weight:700;cursor:pointer">Refresh</button>
-  <script>
-  /* Suite performance: decode apps on idle, faster switches */
-  (function(){
-    var decoded = { stock: false, sweet: false };
-    function decodeMod(mod) {
-      try {
-        if (mod === 'stock' && window.APP_STOCK && window.APP_STOCK.length > 100) { decoded.stock = true; return; }
-        if (mod === 'sweet' && window.APP_SWEET && window.APP_SWEET.length > 100) { decoded.sweet = true; return; }
-        var b64 = mod === 'stock' ? window.__APP_STOCK_B64 : window.__APP_SWEET_B64;
-        if (!b64) return;
-        if (typeof window.__decodeB64 === 'function') {
-          var html = window.__decodeB64(b64);
-          if (html && html.length > 100) {
-            if (mod === 'stock') window.APP_STOCK = html;
-            else window.APP_SWEET = html;
-            decoded[mod] = true;
-          }
-        }
-      } catch (e) {}
-    }
-    function idlePrefetch() {
-      var run = function() {
-        decodeMod('stock');
-        setTimeout(function(){ decodeMod('sweet'); }, 50);
-      };
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(run, { timeout: 2500 });
-      } else {
-        setTimeout(run, 400);
-      }
-    }
-    if (document.readyState === 'complete') idlePrefetch();
-    else window.addEventListener('load', idlePrefetch, { once: true });
-    // Warm the other module after opening one
-    var _om = window.openModule;
-    if (typeof _om === 'function') {
-      window.openModule = function(name) {
-        var r = _om.apply(this, arguments);
-        var other = name === 'stock' ? 'sweet' : 'stock';
-        setTimeout(function(){ decodeMod(other); }, 300);
-        return r;
-      };
-    } else {
-      // openModule defined later — hook when available
-      Object.defineProperty(window, '__suitePrefetchHook', {
-        value: function() {
-          var _om2 = window.openModule;
-          if (typeof _om2 !== 'function' || _om2.__perfWrapped) return;
-          window.openModule = function(name) {
-            var r = _om2.apply(this, arguments);
-            setTimeout(function(){ decodeMod(name === 'stock' ? 'sweet' : 'stock'); }, 300);
-            return r;
-          };
-          window.openModule.__perfWrapped = true;
-        },
-        writable: true
-      });
-      document.addEventListener('DOMContentLoaded', function(){
-        setTimeout(function(){ try { window.__suitePrefetchHook(); } catch(e){} }, 0);
-      });
-    }
-  })();
-  </script>
-
-</body></html>';
+              '<button onclick="parent.location.reload()" style="padding:10px 16px;border:0;border-radius:10px;background:#2EC4D6;font-weight:700;cursor:pointer">Refresh</button></body></html>';
           } else if (tries % 10 === 0) {
             showLoad(label + ' (' + Math.round(tries * 0.2) + 's)…');
           }
@@ -2609,6 +2544,59 @@ window.__stakSweetReady = !!(window.APP_SWEET && window.APP_SWEET.length > 100);
       });
     })();
     </script>
+
+
+  <script>
+  /* Suite performance: decode apps on idle, faster switches */
+  (function(){
+    var decoded = { stock: false, sweet: false };
+    function decodeMod(mod) {
+      try {
+        if (mod === 'stock' && window.APP_STOCK && window.APP_STOCK.length > 100) { decoded.stock = true; return; }
+        if (mod === 'sweet' && window.APP_SWEET && window.APP_SWEET.length > 100) { decoded.sweet = true; return; }
+        var b64 = mod === 'stock' ? window.__APP_STOCK_B64 : window.__APP_SWEET_B64;
+        if (!b64) return;
+        if (typeof window.__decodeB64 === 'function') {
+          var html = window.__decodeB64(b64);
+          if (html && html.length > 100) {
+            if (mod === 'stock') window.APP_STOCK = html;
+            else window.APP_SWEET = html;
+            decoded[mod] = true;
+          }
+        }
+      } catch (e) {}
+    }
+    function idlePrefetch() {
+      var run = function() {
+        decodeMod('stock');
+        setTimeout(function(){ decodeMod('sweet'); }, 50);
+      };
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(run, { timeout: 2500 });
+      } else {
+        setTimeout(run, 400);
+      }
+    }
+    if (document.readyState === 'complete') idlePrefetch();
+    else window.addEventListener('load', idlePrefetch, { once: true });
+    function wrapOpenModule() {
+      var _om = window.openModule;
+      if (typeof _om !== 'function' || _om.__perfWrapped) return;
+      window.openModule = function(name) {
+        var r = _om.apply(this, arguments);
+        setTimeout(function(){ decodeMod(name === 'stock' ? 'sweet' : 'stock'); }, 300);
+        return r;
+      };
+      window.openModule.__perfWrapped = true;
+    }
+    window.__suitePrefetchHook = wrapOpenModule;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function(){ setTimeout(wrapOpenModule, 0); });
+    } else {
+      setTimeout(wrapOpenModule, 0);
+    }
+  })();
+  </script>
 
 </body>
 </html>
