@@ -1,51 +1,45 @@
-# StakSuite ESC/POS bridge
+# Stak Suite
 
-Local HTTP bridge: **StockStak → this server → thermal printer** (network port 9100).
+Single-file web app: **StockStak** (inventory & POS) + **SweetStak** (pastry orders).
 
-## Run
+## Run locally
 
-```bash
-cd escpos-bridge
-npm start
-```
-
-With a network printer IP:
+1. Download or clone this repository.
+2. Open `index.html` in a modern browser (Chrome, Edge, Firefox, Safari).
+3. Or serve with any static server:
 
 ```bash
-PRINTER_HOST=192.168.1.50 PRINTER_PORT=9100 npm start
+npx --yes serve .
+# or: python3 -m http.server 8080
 ```
 
-Optional:
+Then visit the URL shown (e.g. `http://localhost:3000`).
 
-```bash
-PORT=3333
-BRIDGE_API_KEY=my-secret
-SAVE_LAST=1
-```
+## Apps
 
-## StockStak settings
+| Module | Purpose |
+|--------|---------|
+| **StockStak** | Branch inventory, POS, transfers, attendance, permissions |
+| **SweetStak** | Supervisor/chef orders, cake menu, chef inventory |
 
-**POS → Printer settings → Receipt printer API**
+## Notes
 
-| Field | Value |
-|--------|--------|
-| Print method | **Raw ESC/POS API** |
-| API / Bridge URL | `http://127.0.0.1:3333/print` |
-| API key | same as `BRIDGE_API_KEY` if set |
+- Data is stored in the browser (`localStorage`). Use the same browser/device to keep data.
+- Optional Firebase/cloud features work when configured inside the app.
+- Works offline for local features after the first load.
 
-Then click **Test printer API** or complete a checkout.
+## License
 
-## Request body
+Use and modify for your business as needed.
 
-```json
-{
-  "type": "escpos",
-  "format": "base64",
-  "data": "<base64 bytes>",
-  "width": 80
-}
-```
 
-## USB-only printers
+## Cross-device sync
 
-This bridge targets **network raw 9100**. For pure USB, share the printer on LAN, use PrintNode, or a vendor ePOS tool.
+Requires Firebase to be configured and online on each device:
+
+1. Open the **same company portal** on each device.
+2. Supervisor/branch accounts sync via cloud (`users_stockstak_*`).
+3. Company logo syncs via `company_profile_stock_*`.
+4. Inventory/POS data uses live Firestore sync when enabled.
+
+Local-only / offline devices will not share data until they connect and open the portal again.
